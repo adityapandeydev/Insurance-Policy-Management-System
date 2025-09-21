@@ -1,0 +1,101 @@
+# ─── Project-specific exclusions ────────────────────────────────────────────
+docs/
+implementation/
+
+# ─── Maven ──────────────────────────────────────────────────────────────────
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+!backend/.mvn/wrapper/maven-wrapper.properties
+
+# ─── Java ───────────────────────────────────────────────────────────────────
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# ─── Spring Boot ────────────────────────────────────────────────────────────
+backend/HELP.md
+backend/.factorypath
+
+# ─── IDE — IntelliJ IDEA ────────────────────────────────────────────────────
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# ─── IDE — VS Code ──────────────────────────────────────────────────────────
+.vscode/
+*.code-workspace
+
+# ─── IDE — Eclipse ──────────────────────────────────────────────────────────
+.project
+.classpath
+.settings/
+bin/
+*.launch
+
+# ─── IDE — NetBeans ─────────────────────────────────────────────────────────
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# ─── Node / Frontend ────────────────────────────────────────────────────────
+frontend/node_modules/
+frontend/.next/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.production
+frontend/.cache/
+frontend/build/
+
+# ─── Environment & Secrets ──────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+secrets/
+
+# ─── Logs ───────────────────────────────────────────────────────────────────
+*.log
+logs/
+backend/logs/
+
+# ─── Docker ─────────────────────────────────────────────────────────────────
+.docker/
+docker-volumes/
+
+# ─── OS generated files ─────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ─── Test coverage reports ──────────────────────────────────────────────────
+backend/target/site/
+backend/target/surefire-reports/
+coverage/
+*.exec
+
+# ─── SonarQube ──────────────────────────────────────────────────────────────
+.sonar/
+.scannerwork/
+
+# ─── Gradle (if ever migrated) ───────────────────────────────────────────────
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
