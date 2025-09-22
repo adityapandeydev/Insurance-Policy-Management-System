@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        ╔══════════════════════════════════════════════════════════════╗
+        ║              SPRING BOOT PARENT POM                         ║
+        ╠══════════════════════════════════════════════════════════════╣
+        ║  The spring-boot-starter-parent provides:                   ║
+        ║  1. Default dependency versions (BOM - Bill of Materials)   ║
+        ║  2. Default Maven plugin configurations                     ║
+        ║  3. Resource filtering and encoding defaults                ║
+        ║                                                              ║
+        ║  INTERVIEW TIP:                                             ║
+        ║  "Why use parent POM instead of dependency management?"     ║
+        ║  → It inherits from spring-boot-dependencies BOM, ensuring  ║
+        ║    all Spring modules remain version-compatible. You don't  ║
+        ║    have to manually manage transitive dependency versions.  ║
+        ╚══════════════════════════════════════════════════════════════╝
+    -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.3</version>
+        <relativePath/>
+    </parent>
+
+    <!-- GAV Coordinates (GroupId, ArtifactId, Version) - Maven's unique identifier for this artifact -->
+    <groupId>com.insurance</groupId>
+    <artifactId>insurance-policy-management</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>insurance-policy-management</name>
+    <description>Enterprise Insurance Policy Management System — Spring Boot 3.x · Java 21</description>
+
+    <properties>
+        <java.version>21</java.version>
+        <!-- MapStruct: compile-time DTO mapper (zero reflection overhead at runtime) -->
+        <mapstruct.version>1.5.5.Final</mapstruct.version>
+        <!-- Lombok: annotation-driven boilerplate code generation -->
+        <lombok.version>1.18.30</lombok.version>
+        <!-- JJWT: Java JWT library for token creation and validation -->
+        <jjwt.version>0.12.3</jjwt.version>
+        <!-- SpringDoc: auto-generates Swagger UI from OpenAPI 3.0 annotations -->
+        <springdoc.version>2.3.0</springdoc.version>
+    </properties>
+
+    <dependencies>
+
+        <!-- ════════════════════════════════════════════════
+             CORE SPRING BOOT STARTERS
+             ════════════════════════════════════════════════ -->
+
+        <!--
+            spring-boot-starter-web
+            ─────────────────────────────────────────────────
+            Includes: Spring MVC, Embedded Tomcat, Jackson (JSON serialization)
+            Jackson handles: Java Object ↔ JSON conversion automatically
+            INTERVIEW TIP: Spring MVC uses DispatcherServlet as the "front controller".
+            Every HTTP request first hits DispatcherServlet, which delegates to
+            the appropriate @RestController based on URL mapping.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!--
+            spring-boot-starter-security
+            ─────────────────────────────────────────────────
+            Includes: Spring Security core, DelegatingFilterProxy, FilterChainProxy
+            INTERVIEW TIP: Spring Security operates as a servlet filter chain.
+            The DelegatingFilterProxy bridges the Servlet container's lifecycle
+            with Spring's ApplicationContext. Every HTTP request passes through
+            the SecurityFilterChain before reaching any controller.
+            Key filters in order: UsernamePasswordAuthenticationFilter → JwtAuthFilter →
+                                  ExceptionTranslationFilter → FilterSecurityInterceptor
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!--
+            spring-boot-starter-data-jpa
+            ─────────────────────────────────────────────────
+            Includes: Hibernate ORM, Spring Data JPA, Spring JDBC
+            INTERVIEW TIP:
+            - JPA (Jakarta Persistence API) is a specification (interface/contract)
+            - Hibernate is the implementation of that specification
+            - Spring Data JPA adds the repository abstraction (CrudRepository,
+              JpaRepository) so you write zero SQL for standard CRUD operations.
+            - Hibernate translates @Entity annotated classes to SQL DDL/DML.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!--
+            spring-boot-starter-validation
+            ─────────────────────────────────────────────────
+            Includes: Jakarta Bean Validation (JSR-380), Hibernate Validator
+            Annotations: @NotNull, @NotBlank, @Size, @Email, @Min, @Max, @Pattern
+            INTERVIEW TIP:
+            - @Valid on method parameter: triggers validation in controller
+            - @Validated on class: enables method-level validation in service
+            - ConstraintViolationException thrown on failure → handled by GlobalExceptionHandler
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!--
+            spring-boot-starter-actuator
+            ─────────────────────────────────────────────────
+            Provides operational endpoints: /actuator/health, /actuator/info,
+            /actuator/metrics, /actuator/env
+            Essential for Docker health checks and Kubernetes liveness/readiness probes
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- ════════════════════════════════════════════════
+             DATABASE
+             ════════════════════════════════════════════════ -->
+
+        <!--
+            PostgreSQL JDBC Driver (scope=runtime)
+            ─────────────────────────────────────────────────
+            scope=runtime: needed at runtime only (not compile time).
+            The application compiles against the JDBC API (javax.sql.*),
+            not against PostgreSQL-specific classes.
+            INTERVIEW TIP: JDBC is the foundational Java database API.
+            Hibernate uses JDBC internally to execute SQL statements.
+        -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--
+            Flyway Core — Database Migration Tool
+            ─────────────────────────────────────────────────
+            INTERVIEW TIP: Flyway solves the "database drift" problem in teams.
+            Without it, developers manually run SQL scripts that may get out of sync.
+            Flyway enforces order:
+            1. On startup, reads classpath:db/migration/V*.sql files
+            2. Compares against flyway_schema_history table
+            3. Applies any un-applied migrations in version order
+            Benefits:
+            - Schema is version-controlled alongside code
+            - Reproducible environments (dev, staging, production)
+            - Immutable migrations (applied scripts never change)
+        -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+        <!-- Required for Flyway 10+ with PostgreSQL (driver-specific support) -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+
+        <!-- ════════════════════════════════════════════════
+             JWT AUTHENTICATION
+             ════════════════════════════════════════════════ -->
+
+        <!--
+            JJWT (Java JSON Web Token) — Split into 3 JARs for modularity
+            ─────────────────────────────────────────────────
+            INTERVIEW TIP: JWT structure = Header.Payload.Signature
+            ┌──────────────┬──────────────────────────────┬─────────────────────┐
+            │    Header    │          Payload             │     Signature       │
+            │ {alg, type}  │ {sub, iat, exp, role, ...}   │ HMAC(header+payload,│
+            │  Base64URL   │        Base64URL              │  secret) Base64URL  │
+            └──────────────┴──────────────────────────────┴─────────────────────┘
+            Stateless authentication: server stores NO session.
+            Token is validated by re-computing the signature on every request.
+        -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ════════════════════════════════════════════════
+             CODE QUALITY & BOILERPLATE REDUCTION
+             ════════════════════════════════════════════════ -->
+
+        <!--
+            Lombok — Annotation-based code generation
+            ─────────────────────────────────────────────────
+            optional=true: Lombok is NOT inherited by modules that depend on this project.
+            It's compile-time only — the generated bytecode is standard Java.
+            INTERVIEW TIP: Lombok runs as a Java annotation processor.
+            At compile time, it modifies the AST (Abstract Syntax Tree) to inject
+            getters, setters, constructors, builders, equals/hashCode, toString, etc.
+            Common: @Getter, @Setter, @Data, @Builder, @Slf4j, @RequiredArgsConstructor
+        -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <optional>true</optional>
+        </dependency>
+
+        <!--
+            MapStruct — Compile-time DTO ↔ Entity Mapper
+            ─────────────────────────────────────────────────
+            INTERVIEW TIP: "Why MapStruct over ModelMapper or manual mapping?"
+            1. Compile-time: MapStruct generates plain Java code (no reflection)
+               → Errors caught at compile time, not runtime
+            2. Performance: ~10x faster than reflection-based mappers
+            3. Type-safety: incompatible types = compiler error
+            4. Spring integration: @Mapper(componentModel="spring") → @Component bean
+            
+            How it works: You write a mapper interface, MapStruct generates
+            the implementation class (CustomerMapperImpl) at compile time.
+        -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${mapstruct.version}</version>
+        </dependency>
+
+        <!-- ════════════════════════════════════════════════
+             API DOCUMENTATION
+             ════════════════════════════════════════════════ -->
+
+        <!--
+            SpringDoc OpenAPI (Swagger UI)
+            ─────────────────────────────────────────────────
+            Auto-generates OpenAPI 3.0 spec from Spring MVC annotations.
+            Swagger UI: http://localhost:8080/swagger-ui.html
+            JSON spec:  http://localhost:8080/v3/api-docs
+            INTERVIEW TIP: OpenAPI 3.0 is the industry standard for REST API contracts.
+            It enables: API-first design, client code generation, automated testing.
+        -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- ════════════════════════════════════════════════
+             TESTING
+             ════════════════════════════════════════════════ -->
+
+        <!--
+            spring-boot-starter-test
+            ─────────────────────────────────────────────────
+            Includes: JUnit 5 (Jupiter), Mockito, AssertJ, Hamcrest,
+                      MockMvc, TestRestTemplate, JSONPath
+            
+            Spring Boot Test Slice Annotations:
+            @WebMvcTest         → Loads only web layer (controllers, filters, security)
+            @DataJpaTest        → Loads only JPA layer (repositories, Hibernate, H2)
+            @SpringBootTest     → Full application context (integration tests)
+            @MockBean           → Replaces a Spring bean with a Mockito mock
+            
+            INTERVIEW TIP: Use @WebMvcTest for controller tests (fast, isolated).
+            Use @SpringBootTest only for integration tests that need the full context.
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            Spring Security Test
+            Provides: @WithMockUser, @WithUserDetails, SecurityMockMvcRequestPostProcessors
+            Allows testing secured endpoints without generating real JWTs.
+        -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!--
+                Spring Boot Maven Plugin
+                ─────────────────────────────────────────────────
+                Purpose: Repackages the JAR as an executable "fat JAR" (uber JAR)
+                that includes all dependencies.
+                
+                INTERVIEW TIP: "What is a fat JAR / uber JAR?"
+                → A standard JAR only contains the project's own classes.
+                  A fat JAR bundles ALL dependencies (JARs within a JAR) using
+                  a special classloader, making the application self-contained
+                  and deployable without an external application server (Tomcat).
+                
+                The 'exclude' config removes Lombok from the final JAR since
+                Lombok is only needed at compile time.
+            -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+
+            <!--
+                Maven Compiler Plugin — Annotation Processor Configuration
+                ─────────────────────────────────────────────────
+                CRITICAL ORDER: Lombok MUST be declared before MapStruct.
+                
+                Why? Annotation processors run sequentially:
+                Step 1: Lombok reads @Getter/@Builder on Customer.java
+                        → generates CustomerImpl with getters/setters/builders
+                Step 2: MapStruct reads CustomerMapper.java + Customer.java
+                        → uses Lombok-generated methods to build CustomerMapperImpl
+                
+                If MapStruct runs BEFORE Lombok, it won't see the getters/setters
+                and will generate a broken mapper or fail to compile.
+                
+                The compiler arg -Amapstruct.defaultComponentModel=spring tells
+                MapStruct to annotate all generated mappers with @Component,
+                making them auto-injectable Spring beans.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>21</source>
+                    <target>21</target>
+                    <annotationProcessorPaths>
+                        <!-- STEP 1: Lombok must process first -->
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <!-- STEP 2: MapStruct processes after Lombok -->
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <compilerArgs>
+                        <!-- Auto-register all MapStruct mappers as Spring beans -->
+                        <arg>-Amapstruct.defaultComponentModel=spring</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
