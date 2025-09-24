@@ -1,0 +1,187 @@
+# ═══════════════════════════════════════════════════════════════════════
+# INSURANCE POLICY MANAGEMENT SYSTEM — APPLICATION CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════
+#
+# INTERVIEW TIP: Spring Boot reads configuration in this priority order:
+# 1. Command-line arguments  (highest priority)
+# 2. OS environment variables
+# 3. application-{profile}.yml  (profile-specific, e.g., application-docker.yml)
+# 4. application.yml            (default, lowest priority)
+#
+# This file is the DEFAULT profile (local development).
+# For Docker, application-docker.yml overrides these values.
+# ═══════════════════════════════════════════════════════════════════════
+
+# ───────────────────────────────────────────────────────────────────────
+# SERVER CONFIGURATION
+# ───────────────────────────────────────────────────────────────────────
+server:
+  port: 8080
+  # Adds /api/v1 prefix to ALL endpoints automatically
+  # INTERVIEW TIP: API versioning via URL is the most common strategy.
+  # Other strategies: request header versioning, content negotiation.
+  servlet:
+    context-path: /api/v1
+  # Graceful shutdown: waits for in-flight requests to complete before stopping
+  # INTERVIEW TIP: Essential for zero-downtime deployments in Kubernetes
+  shutdown: graceful
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html
+    min-response-size: 1024
+
+# ───────────────────────────────────────────────────────────────────────
+# SPRING BOOT CONFIGURATION
+# ───────────────────────────────────────────────────────────────────────
+spring:
+  application:
+    name: insurance-policy-management
+
+  # ─── DATABASE ───────────────────────────────────────────────────────
+  datasource:
+    # JDBC URL format: jdbc:postgresql://<host>:<port>/<database>
+    url: jdbc:postgresql://localhost:5432/insurance_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    # HikariCP — fastest JDBC connection pool (default in Spring Boot 2+)
+    # INTERVIEW TIP: Connection pools reuse DB connections instead of
+    # creating a new TCP connection for each request (very expensive).
+    hikari:
+      pool-name: InsuranceHikariPool
+      maximum-pool-size: 10       # Max concurrent DB connections
+      minimum-idle: 5             # Minimum idle connections kept alive
+      idle-timeout: 300000        # Remove idle connections after 5 minutes
+      connection-timeout: 20000   # Fail fast if no connection available in 20s
+      leak-detection-threshold: 60000  # Warn if connection not returned in 60s
+
+  # ─── JPA / HIBERNATE ────────────────────────────────────────────────
+  jpa:
+    # INTERVIEW TIP: ddl-auto values:
+    # none        → Do nothing (use with Flyway in production)
+    # validate    → Validate schema matches entities, fail if not
+    # update      → Alter schema to match entities (risky in production!)
+    # create      → Drop and recreate schema on startup (loses all data!)
+    # create-drop → Create schema, drop on close (good for tests)
+    #
+    # We use 'validate' + Flyway: Flyway creates the schema, Hibernate validates it.
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # Show SQL in console — useful for debugging queries
+        # Disable in production (set to false or use logging.level instead)
+        show_sql: true
+        format_sql: true
+        # Batch size: group multiple INSERT/UPDATE statements into one DB round-trip
+        # INTERVIEW TIP: Without batching, inserting 100 rows = 100 DB round trips.
+        # With batch_size=20, it's 5 round trips. Significant performance improvement.
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+        # Open Session In View — DISABLED (best practice)
+        # INTERVIEW TIP: OSIV keeps the Hibernate Session open for the entire HTTP request.
+        # This causes: lazy-loading outside transactions, hard-to-debug N+1 queries,
+        # unexpected DB connections held during view rendering.
+        # Best practice: always disable OSIV and use explicit DTO projections.
+    open-in-view: false
+
+  # ─── FLYWAY DATABASE MIGRATIONS ─────────────────────────────────────
+  flyway:
+    enabled: true
+    # Location of SQL migration scripts
+    locations: classpath:db/migration
+    # Baseline: create flyway_schema_history if schema already exists
+    baseline-on-migrate: true
+    baseline-version: 0
+    # INTERVIEW TIP: Flyway naming convention for migration files:
+    # Versioned:  V{version}__{description}.sql  (applied once, immutable)
+    # Repeatable: R__{description}.sql           (re-applied when checksum changes)
+    # Undo:       U{version}__{description}.sql  (requires Flyway Pro)
+
+# ───────────────────────────────────────────────────────────────────────
+# JWT CONFIGURATION
+# ───────────────────────────────────────────────────────────────────────
+# INTERVIEW TIP: Never hardcode secrets in application.yml for production.
+# Use environment variables (${JWT_SECRET}) or secret management (Vault, AWS Secrets Manager).
+# The secret must be at least 256 bits (32 chars) for HS256 algorithm.
+application:
+  security:
+    jwt:
+      # Base64-encoded 256-bit secret key for HMAC-SHA256 signing
+      # CHANGE THIS IN PRODUCTION — use a long, random, environment-variable-backed secret
+      secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      # Token validity: 24 hours (in milliseconds)
+      expiration: 86400000
+      # Refresh token validity: 7 days
+      refresh-token:
+        expiration: 604800000
+
+# ───────────────────────────────────────────────────────────────────────
+# SPRINGDOC / SWAGGER CONFIGURATION
+# ───────────────────────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    # Try-it-out enabled by default for all operations
+    try-it-out-enabled: true
+    # Expand operations by default
+    operations-sorter: alpha
+    tags-sorter: alpha
+    # Display request duration
+    display-request-duration: true
+  show-actuator: false
+  # INTERVIEW TIP: Since we have context-path=/api/v1, the full Swagger URL is:
+  # http://localhost:8080/api/v1/swagger-ui.html
+
+# ───────────────────────────────────────────────────────────────────────
+# ACTUATOR CONFIGURATION
+# ───────────────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        # Expose only health and info in production; add 'metrics' for monitoring
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+# ───────────────────────────────────────────────────────────────────────
+# APPLICATION INFO (shown at /actuator/info)
+# ───────────────────────────────────────────────────────────────────────
+info:
+  app:
+    name: Insurance Policy Management System
+    version: 1.0.0
+    description: Enterprise insurance platform for managing customers, policies, and claims
+    java-version: 21
+    spring-boot-version: 3.2.3
+
+# ───────────────────────────────────────────────────────────────────────
+# LOGGING CONFIGURATION
+# ───────────────────────────────────────────────────────────────────────
+# INTERVIEW TIP: SLF4J is the logging facade (interface).
+# Logback is the default implementation in Spring Boot.
+# Other implementations: Log4j2, Java Util Logging (JUL)
+# SLF4J allows switching implementations without changing code.
+logging:
+  level:
+    root: INFO
+    com.insurance: DEBUG          # Our application code — verbose for development
+    org.springframework.security: DEBUG  # Security events — useful for debugging auth
+    org.hibernate.SQL: DEBUG      # Show raw SQL (same as show_sql=true but via logging)
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE  # Show bound parameters
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/insurance-app.log
