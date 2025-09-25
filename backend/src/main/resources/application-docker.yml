@@ -1,0 +1,50 @@
+# ═══════════════════════════════════════════════════════════════════════
+# DOCKER PROFILE CONFIGURATION
+# ═══════════════════════════════════════════════════════════════════════
+#
+# This file activates when running with: --spring.profiles.active=docker
+# It OVERRIDES only the properties that differ in a Docker environment.
+# All other properties are inherited from application.yml.
+#
+# INTERVIEW TIP: Spring Boot Profile-specific files follow the naming convention:
+# application-{profile}.yml
+# Activation: SPRING_PROFILES_ACTIVE=docker (env var in docker-compose)
+# ═══════════════════════════════════════════════════════════════════════
+
+spring:
+  # ─── DATABASE (Docker network hostnames) ────────────────────────────
+  # In Docker Compose, services communicate using their service names as hostnames.
+  # 'postgres' here refers to the service name in docker-compose.yml, not localhost.
+  datasource:
+    url: jdbc:postgresql://postgres:5432/insurance_db
+    username: ${POSTGRES_USER:postgres}       # reads env var, falls back to 'postgres'
+    password: ${POSTGRES_PASSWORD:postgres}   # reads env var, falls back to 'postgres'
+
+  # ─── JPA (production settings) ──────────────────────────────────────
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Never auto-create/modify schema in Docker/production
+    properties:
+      hibernate:
+        show_sql: false    # Don't log SQL in production (performance + security)
+        format_sql: false
+
+# ─── JWT Secret from environment ──────────────────────────────────────
+# INTERVIEW TIP: In production, secrets come from:
+# - Docker secrets / Kubernetes secrets
+# - AWS Secrets Manager / GCP Secret Manager / Azure Key Vault
+# - HashiCorp Vault
+# NEVER commit real secrets to git.
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      expiration: ${JWT_EXPIRATION:86400000}
+
+# ─── Logging (less verbose in Docker) ────────────────────────────────
+logging:
+  level:
+    root: WARN
+    com.insurance: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
