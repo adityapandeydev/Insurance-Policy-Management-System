@@ -256,7 +256,7 @@ public class JwtService {
      *
      * @return SecretKey for HMAC-SHA256 operations
      */
-    private Key getSigningKey() {
+    private javax.crypto.SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }

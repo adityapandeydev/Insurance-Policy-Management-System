@@ -40,7 +40,7 @@
         <!-- MapStruct: compile-time DTO mapper (zero reflection overhead at runtime) -->
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <!-- Lombok: annotation-driven boilerplate code generation -->
-        <lombok.version>1.18.30</lombok.version>
+        <lombok.version>1.18.36</lombok.version>
         <!-- JJWT: Java JWT library for token creation and validation -->
         <jjwt.version>0.12.3</jjwt.version>
         <!-- SpringDoc: auto-generates Swagger UI from OpenAPI 3.0 annotations -->
@@ -164,11 +164,7 @@
             <artifactId>flyway-core</artifactId>
         </dependency>
 
-        <!-- Required for Flyway 10+ with PostgreSQL (driver-specific support) -->
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
-        </dependency>
+
 
         <!-- ════════════════════════════════════════════════
              JWT AUTHENTICATION
