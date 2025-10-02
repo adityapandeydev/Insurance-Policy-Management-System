@@ -4,12 +4,15 @@ import com.insurance.dto.request.LoginRequest;
 import com.insurance.dto.request.RegisterRequest;
 import com.insurance.dto.response.AuthResponse;
 import com.insurance.entity.User;
+import com.insurance.entity.Customer;
 import com.insurance.enums.Role;
 import com.insurance.exception.BusinessRuleException;
 import com.insurance.repository.UserRepository;
+import com.insurance.repository.CustomerRepository;
 import com.insurance.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -55,6 +58,7 @@ import java.util.Map;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
@@ -98,6 +102,17 @@ public class AuthService {
                 .build();
 
         User savedUser = userRepository.save(user);
+        
+        // ─── Step 2.5: Create the Customer profile ───────────────────────────
+        Customer customer = Customer.builder()
+                .user(savedUser)
+                .phoneNumber(request.getPhoneNumber())
+                .dateOfBirth(request.getDateOfBirth() != null && !request.getDateOfBirth().isEmpty() ? 
+                             LocalDate.parse(request.getDateOfBirth()) : null)
+                .address(request.getAddress())
+                .build();
+        customerRepository.save(customer);
+        
         log.info("User registered successfully with id: {} and email: {}",
                 savedUser.getId(), savedUser.getEmail());
 
