@@ -121,8 +121,8 @@ public class SecurityConfig {
                 // Policies: all authenticated users can view; ADMIN/AGENT can modify
                 .requestMatchers(HttpMethod.GET, "/policies/**")
                     .hasAnyAuthority("ROLE_ADMIN", "ROLE_AGENT", "ROLE_CUSTOMER")
-                .requestMatchers(HttpMethod.POST, "/policies/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_AGENT")
-                .requestMatchers(HttpMethod.PUT, "/policies/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_AGENT")
+                .requestMatchers(HttpMethod.POST, "/policies/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_AGENT", "ROLE_CUSTOMER")
+                .requestMatchers(HttpMethod.PUT, "/policies/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_AGENT", "ROLE_CUSTOMER")
                 .requestMatchers(HttpMethod.DELETE, "/policies/**").hasAuthority("ROLE_ADMIN")
 
                 // Claims: customers can submit; agents/admins can review/approve/reject
@@ -136,8 +136,8 @@ public class SecurityConfig {
                 // Risk assessment: ADMIN and AGENT only
                 .requestMatchers("/risk/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_AGENT")
 
-                // Dashboard: ADMIN only
-                .requestMatchers("/dashboard/**").hasAuthority("ROLE_ADMIN")
+                // Dashboard: ADMIN and AGENT
+                .requestMatchers("/dashboard/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_AGENT")
 
                 // All other requests require authentication
                 .anyRequest().authenticated()
