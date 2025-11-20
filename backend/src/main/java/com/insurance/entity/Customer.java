@@ -145,6 +145,14 @@ public class Customer {
               fetch = FetchType.LAZY)
     private RiskAssessment riskAssessment;
 
+    /**
+     * @ManyToOne: Many Customers can be assigned to one Agent.
+     * agent_id is the foreign key in the customers table.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "agent_id")
+    private User agent;
+
     // ─── AUDIT FIELDS ─────────────────────────────────────────────────────
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
