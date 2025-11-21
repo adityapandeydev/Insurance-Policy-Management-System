@@ -51,18 +51,25 @@ public interface PolicyRepository extends JpaRepository<Policy, Long> {
      */
     long countByCustomerId(Long customerId);
 
+    long countByCustomer_AgentId(Long agentId);
+    long countByCustomer_AgentIdAndStatus(Long agentId, PolicyStatus status);
+
     /**
      * Searches policies by policy number, name, or customer name.
      * Supports paginated results for the admin policy listing.
      */
     @Query("""
         SELECT p FROM Policy p
-        WHERE LOWER(p.policyNumber) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+        WHERE (:agentId IS NULL OR p.customer.agent.id = :agentId)
+        AND (LOWER(p.policyNumber) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
            OR LOWER(p.policyName) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
            OR LOWER(p.customer.user.firstName) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
-           OR LOWER(p.customer.user.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+           OR LOWER(p.customer.user.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%')))
         """)
-    Page<Policy> searchPolicies(@Param("searchTerm") String searchTerm, Pageable pageable);
+    Page<Policy> searchPolicies(@Param("searchTerm") String searchTerm, @Param("agentId") Long agentId, Pageable pageable);
+
+    @Query("SELECT p FROM Policy p WHERE (:agentId IS NULL OR p.customer.agent.id = :agentId)")
+    Page<Policy> findAllByAgentId(@Param("agentId") Long agentId, Pageable pageable);
 
     /**
      * Finds all ACTIVE policies whose end date has passed today.

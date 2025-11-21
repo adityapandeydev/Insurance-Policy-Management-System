@@ -61,6 +61,9 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
      */
     long countByCustomerId(Long customerId);
 
+    long countByCustomer_AgentId(Long agentId);
+    long countByCustomer_AgentIdAndStatus(Long agentId, ClaimStatus status);
+
     /**
      * Finds a claim by its business-facing claim number.
      */
@@ -100,6 +103,9 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
      * Admin: get all claims with filtering support.
      */
     Page<Claim> findAll(Pageable pageable);
+
+    @Query("SELECT c FROM Claim c WHERE (:agentId IS NULL OR c.customer.agent.id = :agentId)")
+    Page<Claim> findAllByAgentId(@Param("agentId") Long agentId, Pageable pageable);
 
     /**
      * Count all claims for a given customer (for risk assessment).

@@ -71,12 +71,20 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
      */
     @Query("""
         SELECT c FROM Customer c
-        WHERE LOWER(c.user.firstName) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+        WHERE (:agentId IS NULL OR c.agent.id = :agentId)
+        AND (LOWER(c.user.firstName) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
            OR LOWER(c.user.lastName) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
            OR LOWER(c.user.email) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
-           OR c.phoneNumber LIKE CONCAT('%', :searchTerm, '%')
+           OR c.phoneNumber LIKE CONCAT('%', :searchTerm, '%'))
         """)
-    Page<Customer> searchCustomers(@Param("searchTerm") String searchTerm, Pageable pageable);
+    Page<Customer> searchCustomers(@Param("searchTerm") String searchTerm, @Param("agentId") Long agentId, Pageable pageable);
+
+    @Query("SELECT c FROM Customer c WHERE (:agentId IS NULL OR c.agent.id = :agentId)")
+    Page<Customer> findAllByAgentId(@Param("agentId") Long agentId, Pageable pageable);
+
+    java.util.List<Customer> findAllByAgentIdIsNull();
+
+    long countByAgentId(Long agentId);
 
     /**
      * Returns total count of customers.

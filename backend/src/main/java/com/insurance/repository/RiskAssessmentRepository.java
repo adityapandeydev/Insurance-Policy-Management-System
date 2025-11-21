@@ -30,4 +30,6 @@ public interface RiskAssessmentRepository extends JpaRepository<RiskAssessment, 
      * Dashboard: "How many HIGH risk customers do we have?"
      */
     long countByRiskLevel(RiskLevel riskLevel);
+
+    long countByCustomer_AgentIdAndRiskLevel(Long agentId, RiskLevel riskLevel);
 }
