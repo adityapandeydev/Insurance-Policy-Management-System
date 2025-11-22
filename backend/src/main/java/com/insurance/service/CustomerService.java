@@ -58,6 +58,7 @@ public class CustomerService {
     private final PolicyRepository policyRepository;
     private final ClaimRepository claimRepository;
     private final CustomerMapper customerMapper;
+    private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     /**
      * Creates a customer profile for an existing user.
@@ -114,6 +115,40 @@ public class CustomerService {
     }
 
     /**
+     * Creates a full User and Customer profile, assigned to the agent.
+     */
+    public CustomerResponse createCustomerByAgent(com.insurance.dto.request.RegisterRequest request) {
+        log.info("Creating customer by agent for email: {}", request.getEmail());
+        User currentAgent = getCurrentAuthenticatedUser();
+
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new BusinessRuleException("An account with email '" + request.getEmail() + "' already exists.");
+        }
+
+        User user = User.builder()
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .email(request.getEmail().toLowerCase().trim())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .role(Role.ROLE_CUSTOMER)
+                .enabled(true)
+                .build();
+        User savedUser = userRepository.save(user);
+
+        Customer customer = Customer.builder()
+                .user(savedUser)
+                .phoneNumber(request.getPhoneNumber())
+                .dateOfBirth(request.getDateOfBirth() != null && !request.getDateOfBirth().isEmpty() ? 
+                             java.time.LocalDate.parse(request.getDateOfBirth()) : null)
+                .address(request.getAddress())
+                .agent(currentAgent)
+                .build();
+        Customer savedCustomer = customerRepository.save(customer);
+
+        return enrichWithCounts(customerMapper.toResponse(savedCustomer));
+    }
+
+    /**
      * Retrieves a customer profile by ID.
      * CUSTOMER role users can only access their own profile (enforced here).
      *
@@ -163,12 +198,18 @@ public class CustomerService {
      */
     @Transactional(readOnly = true)
     public Page<CustomerResponse> getAllCustomers(String searchTerm, Pageable pageable) {
-        Page<Customer> customers;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAgent = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_AGENT"));
+        Long agentId = null;
+        if (isAgent) {
+            agentId = getCurrentAuthenticatedUser().getId();
+        }
 
+        Page<Customer> customers;
         if (searchTerm != null && !searchTerm.isBlank()) {
-            customers = customerRepository.searchCustomers(searchTerm.trim(), pageable);
+            customers = customerRepository.searchCustomers(searchTerm.trim(), agentId, pageable);
         } else {
-            customers = customerRepository.findAll(pageable);
+            customers = customerRepository.findAllByAgentId(agentId, pageable);
         }
 
         // Map each Customer entity to CustomerResponse and enrich with counts

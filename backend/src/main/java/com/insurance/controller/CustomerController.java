@@ -62,6 +62,21 @@ public class CustomerController {
     }
 
     /**
+     * POST /api/v1/customers
+     * Creates a full User and Customer profile, assigned to the agent.
+     */
+    @PostMapping
+    @PreAuthorize("hasAuthority('ROLE_AGENT')")
+    @Operation(summary = "Create a new customer account as an Agent")
+    public ResponseEntity<ApiResponse<CustomerResponse>> createCustomerByAgent(
+            @Valid @RequestBody com.insurance.dto.request.RegisterRequest request
+    ) {
+        CustomerResponse response = customerService.createCustomerByAgent(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Customer account created successfully.", response, 201));
+    }
+
+    /**
      * GET /api/v1/customers/me
      * Returns the currently authenticated customer's own profile.
      * CUSTOMER role endpoint — must come before /{id} mapping.
