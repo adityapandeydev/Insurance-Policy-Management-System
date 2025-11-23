@@ -32,7 +32,7 @@ public class DashboardController {
      * ADMIN only — contains sensitive system-wide statistics.
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_AGENT')")
     @Operation(
         summary = "Get system dashboard metrics",
         description = "Returns aggregated counts: customers, policies (by status), claims (by status), risk levels, and user counts. ADMIN only."
