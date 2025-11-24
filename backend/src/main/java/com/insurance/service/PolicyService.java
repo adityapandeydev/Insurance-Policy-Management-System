@@ -10,16 +10,20 @@ import com.insurance.enums.PolicyType;
 import com.insurance.enums.RiskLevel;
 import com.insurance.exception.BusinessRuleException;
 import com.insurance.exception.ResourceNotFoundException;
+import com.insurance.exception.UnauthorizedException;
 import com.insurance.mapper.PolicyMapper;
 import com.insurance.repository.ClaimRepository;
 import com.insurance.repository.CustomerRepository;
 import com.insurance.repository.PolicyRepository;
 import com.insurance.repository.RiskAssessmentRepository;
+import com.insurance.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -65,6 +69,7 @@ public class PolicyService {
 
     private final PolicyRepository policyRepository;
     private final CustomerRepository customerRepository;
+    private final UserRepository userRepository;
     private final RiskAssessmentRepository riskAssessmentRepository;
     private final ClaimRepository claimRepository;
     private final PolicyMapper policyMapper;
@@ -138,6 +143,9 @@ public class PolicyService {
     public PolicyResponse getPolicyById(Long policyId) {
         Policy policy = policyRepository.findById(policyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Policy", "id", policyId));
+        
+        enforcePolicyOwnershipForCustomer(policy);
+        
         return enrichWithClaimCounts(policyMapper.toResponse(policy));
     }
 
@@ -150,9 +158,26 @@ public class PolicyService {
      */
     @Transactional(readOnly = true)
     public Page<PolicyResponse> getAllPolicies(String searchTerm, Pageable pageable) {
-        Page<Policy> policies = (searchTerm != null && !searchTerm.isBlank())
-                ? policyRepository.searchPolicies(searchTerm.trim(), pageable)
-                : policyRepository.findAll(pageable);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdminOrAgent = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                            || a.getAuthority().equals("ROLE_AGENT"));
+
+        boolean isAgent = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_AGENT"));
+        Long agentId = null;
+        if (isAgent) {
+            agentId = userRepository.findByEmail(auth.getName()).get().getId();
+        }
+
+        Page<Policy> policies;
+        if (isAdminOrAgent) {
+            policies = (searchTerm != null && !searchTerm.isBlank())
+                    ? policyRepository.searchPolicies(searchTerm.trim(), agentId, pageable)
+                    : policyRepository.findAllByAgentId(agentId, pageable);
+        } else {
+            Customer customer = getCurrentCustomer();
+            policies = policyRepository.findByCustomerId(customer.getId(), pageable);
+        }
 
         return policies.map(p -> enrichWithClaimCounts(policyMapper.toResponse(p)));
     }
@@ -165,6 +190,19 @@ public class PolicyService {
         if (!customerRepository.existsById(customerId)) {
             throw new ResourceNotFoundException("Customer", "id", customerId);
         }
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdminOrAgent = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                            || a.getAuthority().equals("ROLE_AGENT"));
+
+        if (!isAdminOrAgent) {
+            Customer currentCustomer = getCurrentCustomer();
+            if (!currentCustomer.getId().equals(customerId)) {
+                throw new UnauthorizedException("You can only view your own policies.");
+            }
+        }
+
         return policyRepository.findByCustomerId(customerId, pageable)
                 .map(p -> enrichWithClaimCounts(policyMapper.toResponse(p)));
     }
@@ -424,5 +462,33 @@ public class PolicyService {
             response.setApprovedClaims(claimRepository.countApprovedClaimsByCustomer(response.getCustomerId()));
         }
         return response;
+    }
+
+    /**
+     * For CUSTOMER role users, ensures they can only access their own policies.
+     */
+    private void enforcePolicyOwnershipForCustomer(Policy policy) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdminOrAgent = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")
+                            || a.getAuthority().equals("ROLE_AGENT"));
+
+        if (!isAdminOrAgent) {
+            String currentUserEmail = auth.getName();
+            if (!policy.getCustomer().getUser().getEmail().equals(currentUserEmail)) {
+                throw new UnauthorizedException("You can only access your own policies.");
+            }
+        }
+    }
+
+    /**
+     * Gets the Customer entity for the currently authenticated user.
+     */
+    private Customer getCurrentCustomer() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return customerRepository.findByUserEmail(email)
+                .orElseThrow(() -> new BusinessRuleException(
+                        "No customer profile found for the current user. Please create a profile first."
+                ));
     }
 }

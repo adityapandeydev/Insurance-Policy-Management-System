@@ -43,7 +43,7 @@ public class PolicyController {
     private final PolicyService policyService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_AGENT')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_AGENT', 'ROLE_CUSTOMER')")
     @Operation(summary = "Create a new insurance policy")
     public ResponseEntity<ApiResponse<PolicyResponse>> createPolicy(
             @Valid @RequestBody PolicyRequest request
