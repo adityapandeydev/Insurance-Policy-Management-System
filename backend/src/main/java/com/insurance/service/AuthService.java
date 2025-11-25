@@ -89,6 +89,11 @@ public class AuthService {
             );
         }
 
+        Role role = Role.ROLE_CUSTOMER;
+        if (request.getRole() != null && request.getRole().equalsIgnoreCase("AGENT")) {
+            role = Role.ROLE_AGENT;
+        }
+
         // ─── Step 2: Build and save the User entity ──────────────────────────
         User user = User.builder()
                 .firstName(request.getFirstName())
@@ -96,22 +101,33 @@ public class AuthService {
                 .email(request.getEmail().toLowerCase().trim())
                 // BCrypt: hash the raw password — NEVER store plaintext
                 .password(passwordEncoder.encode(request.getPassword()))
-                // New registrations are always CUSTOMER role
-                .role(Role.ROLE_CUSTOMER)
+                .role(role)
                 .enabled(true)
                 .build();
 
         User savedUser = userRepository.save(user);
         
-        // ─── Step 2.5: Create the Customer profile ───────────────────────────
-        Customer customer = Customer.builder()
-                .user(savedUser)
-                .phoneNumber(request.getPhoneNumber())
-                .dateOfBirth(request.getDateOfBirth() != null && !request.getDateOfBirth().isEmpty() ? 
-                             LocalDate.parse(request.getDateOfBirth()) : null)
-                .address(request.getAddress())
-                .build();
-        customerRepository.save(customer);
+        // ─── Step 2.5: Create the Customer profile (Only if CUSTOMER) ──────────
+        if (role == Role.ROLE_CUSTOMER) {
+            Customer customer = Customer.builder()
+                    .user(savedUser)
+                    .phoneNumber(request.getPhoneNumber())
+                    .dateOfBirth(request.getDateOfBirth() != null && !request.getDateOfBirth().isEmpty() ? 
+                                 LocalDate.parse(request.getDateOfBirth()) : null)
+                    .address(request.getAddress())
+                    .build();
+            customerRepository.save(customer);
+        } else if (role == Role.ROLE_AGENT) {
+            // Assign all unassigned customers to this newly created agent
+            java.util.List<Customer> unassigned = customerRepository.findAllByAgentIdIsNull();
+            for (Customer c : unassigned) {
+                c.setAgent(savedUser);
+            }
+            if (!unassigned.isEmpty()) {
+                customerRepository.saveAll(unassigned);
+                log.info("Assigned {} customers to new agent {}", unassigned.size(), savedUser.getEmail());
+            }
+        }
         
         log.info("User registered successfully with id: {} and email: {}",
                 savedUser.getId(), savedUser.getEmail());

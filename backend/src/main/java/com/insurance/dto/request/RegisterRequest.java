@@ -46,8 +46,9 @@ public class RegisterRequest {
 
     private String phoneNumber;
     
-    // YYYY-MM-DD
     private String dateOfBirth;
     
     private String address;
+    
+    private String role;
 }
