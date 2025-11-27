@@ -42,7 +42,7 @@ spring:
     # JDBC URL format: jdbc:postgresql://<host>:<port>/<database>
     url: jdbc:postgresql://localhost:5432/insurance_db
     username: postgres
-    password: postgres
+    password: 6243
     driver-class-name: org.postgresql.Driver
     # HikariCP — fastest JDBC connection pool (default in Spring Boot 2+)
     # INTERVIEW TIP: Connection pools reuse DB connections instead of
