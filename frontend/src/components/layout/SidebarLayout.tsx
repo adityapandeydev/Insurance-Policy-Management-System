@@ -77,16 +77,27 @@ export const SidebarLayout = () => {
           </button>
         </div>
 
-        <div className="px-6 py-2 mb-4">
-          <div className="bg-foreground/5 rounded-xl p-4 flex items-center gap-3">
-            <div className="h-10 w-10 bg-primary-100 dark:bg-primary-900/50 rounded-full flex items-center justify-center text-primary-600 dark:text-primary-400">
-              <UserIcon size={20} />
+        {/* User Profile Card (Clickable) */}
+        <div className="px-6 mb-4">
+          <NavLink
+            to="/dashboard/settings"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 p-3 rounded-xl transition-all duration-200 border cursor-pointer hover:bg-foreground/[0.03] ${
+                isActive
+                  ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-100 dark:border-primary-800/30 shadow-sm'
+                  : 'bg-background border-border shadow-sm'
+              }`
+            }
+          >
+            <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center flex-shrink-0 text-primary-700 dark:text-primary-400 font-bold border border-primary-200 dark:border-primary-800/50">
+              {username?.charAt(0).toUpperCase()}
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-medium text-foreground truncate">{username}</p>
-              <p className="text-xs text-foreground/50 capitalize">{role?.replace('ROLE_', '').toLowerCase()}</p>
+              <p className="text-sm font-semibold text-foreground truncate">{username}</p>
+              <p className="text-xs text-foreground/60 truncate capitalize">{role?.replace('ROLE_', '').toLowerCase()}</p>
             </div>
-          </div>
+          </NavLink>
         </div>
 
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
