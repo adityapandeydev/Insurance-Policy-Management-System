@@ -13,6 +13,7 @@ export const RegisterPage = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [address, setAddress] = useState('');
+  const [role, setRole] = useState('CUSTOMER');
   
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,7 +35,7 @@ export const RegisterPage = () => {
         phoneNumber,
         dateOfBirth,
         address,
-        role: 'CUSTOMER' // Default registration is always Customer for security
+        role
       });
       // The backend returns an ApiResponse, so the actual AuthResponse is in response.data.data
       setToken(response.data.data.accessToken);
@@ -158,6 +159,34 @@ export const RegisterPage = () => {
                   className="w-full px-4 py-2.5 rounded-lg bg-input border border-border text-foreground focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1.5">Account Type</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="CUSTOMER"
+                      checked={role === 'CUSTOMER'}
+                      onChange={() => setRole('CUSTOMER')}
+                      className="text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-foreground">Customer</span>
+                  </label>
+                  <label className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="role"
+                      value="AGENT"
+                      checked={role === 'AGENT'}
+                      onChange={() => setRole('AGENT')}
+                      className="text-primary-600 focus:ring-primary-500"
+                    />
+                    <span className="text-foreground">Agent</span>
+                  </label>
+                </div>
               </div>
 
               <button
