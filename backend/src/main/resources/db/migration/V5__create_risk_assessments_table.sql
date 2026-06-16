@@ -52,9 +52,9 @@ CREATE TABLE IF NOT EXISTS risk_assessments (
     -- INDIVIDUAL SCORE COMPONENTS (stored for transparency and auditability)
     -- Storing component scores allows: debugging, explaining the result to the customer,
     -- and recalculating the total if the weighting formula changes.
-    age_score           SMALLINT    NOT NULL DEFAULT 0,   -- 0-10 scale
-    coverage_score      SMALLINT    NOT NULL DEFAULT 0,   -- 0-10 scale
-    claim_history_score SMALLINT    NOT NULL DEFAULT 0,   -- 0-10 scale
+    age_score           INTEGER    NOT NULL DEFAULT 0,   -- 0-10 scale
+    coverage_score      INTEGER    NOT NULL DEFAULT 0,   -- 0-10 scale
+    claim_history_score INTEGER    NOT NULL DEFAULT 0,   -- 0-10 scale
 
     -- WEIGHTED TOTAL SCORE
     -- NUMERIC(5,2) allows values like 7.50 (max is 10.00)
